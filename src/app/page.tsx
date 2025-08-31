@@ -1,18 +1,14 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, ToolUIPart } from "ai";
 import { useState } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/conversation";
-import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-} from "@/components/message";
+import { Message, MessageAvatar, MessageContent } from "@/components/message";
 import { Response } from "@/components/response";
 import {
   PromptInput,
@@ -29,6 +25,27 @@ import {
   ToolOutput,
 } from "@/components/tool";
 
+type RetrievalToolInput = {
+  location: string;
+  units: "celsius" | "fahrenheit";
+};
+
+type RetrievalToolOutput = {
+  location: string;
+  temperature: string;
+  conditions: string;
+  humidity: string;
+  windSpeed: string;
+  lastUpdated: string;
+};
+
+type RetrievalToolUIPart = ToolUIPart<{
+  getInformation: {
+    input: RetrievalToolInput;
+    output: RetrievalToolOutput;
+  };
+}>;
+
 export default function Chat() {
   const { messages, sendMessage, status, error, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
@@ -36,25 +53,24 @@ export default function Chat() {
   const [input, setInput] = useState("");
 
   return (
-    <div className="flex flex-col w-full max-w-3xl mx-auto p-6 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-4">Medical RAG Chat</h1>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <h1 className="text-2xl font-semibold">Medical RAG Chat</h1>
 
-      <Conversation>
+      <Conversation className="flex-none grow shrink-1">
         <ConversationContent>
           {messages.map((m) => (
             <Message key={m.id} from={m.role}>
-              <MessageAvatar
-                src={m.role === "user" ? "/avatar-user.png" : "/avatar-bot.png"}
-                name={m.role === "user" ? "You" : "MedBot"}
-              />
               <MessageContent>
-                {m.parts?.map((part: any, idx: number) => {
+                {m.parts?.map((part, idx) => {
                   if (part.type === "text") {
-                    return <Response key={idx}>{part.text}</Response>;
-                  }
-                  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
                     return (
-                      <Tool key={idx}>
+                      <Response key={`${m.id}-${idx}`}>{part.text}</Response>
+                    );
+                  }
+
+                  if (part.type === "tool-getInformation") {
+                    return (
+                      <Tool key={`${m.id}-${idx}`}>
                         <ToolHeader type={part.type} state={part.state} />
                         <ToolContent>
                           <ToolInput input={part.input} />
@@ -62,7 +78,9 @@ export default function Chat() {
                             errorText={part.errorText}
                             output={
                               part.output ? (
-                                <pre className="p-2 text-xs overflow-auto">{JSON.stringify(part.output, null, 2)}</pre>
+                                <pre className="p-2 text-xs overflow-auto">
+                                  {JSON.stringify(part.output, null, 2)}
+                                </pre>
                               ) : undefined
                             }
                           />
@@ -79,7 +97,7 @@ export default function Chat() {
         <ConversationScrollButton />
       </Conversation>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur border-t">
+      <div className="bg-background/80 backdrop-blur border-t">
         <div className="mx-auto max-w-3xl p-4">
           <PromptInput
             onSubmit={(e) => {
@@ -95,7 +113,9 @@ export default function Chat() {
               placeholder="Ask a medical question…"
             />
             <PromptInputToolbar>
-              <PromptInputTools>{/* extra tools can go here */}</PromptInputTools>
+              <PromptInputTools>
+                {/* extra tools can go here */}
+              </PromptInputTools>
               <div className="flex items-center gap-2">
                 {status === "streaming" ? (
                   <PromptInputSubmit status={status} onClick={() => stop()} />
