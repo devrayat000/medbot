@@ -126,7 +126,7 @@ export default function Chat() {
             </PromptInputToolbar>
           </PromptInput>
           {error ? (
-            <div className="text-sm text-red-600 p-2">{String(error)}</div>
+            <div className="text-sm text-red-600 p-2">{error.message}</div>
           ) : null}
         </div>
       </div>
