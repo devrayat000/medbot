@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     messages: convertToModelMessages(messages),
     system: `You are a helpful assistant.\
     Use the 'getInformation' tool to retrieve information from the knowledge base.`,
-    stopWhen: stepCountIs(5),
+    // stopWhen: stepCountIs(5),
     tools: {
       getInformation: tool({
         description:
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         },
       }),
     },
-    // toolChoice: { toolName: "getInformation", type: "tool" },
+    toolChoice: { toolName: "getInformation", type: "tool" },
   });
 
   return result.toUIMessageStreamResponse();
