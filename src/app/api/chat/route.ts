@@ -1,10 +1,11 @@
-import { google } from "@ai-sdk/google";
+import { google, GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import {
   convertToModelMessages,
   streamText,
   UIMessage,
   tool,
   stepCountIs,
+  hasToolCall,
   generateText,
 } from "ai";
 import { findRelevantContent } from "@/lib/ai/retrieval";
@@ -15,13 +16,26 @@ export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
-
+  google.tools.googleSearch;
   const result = streamText({
     model: google("gemini-2.5-flash"),
+    temperature: 0.2,
     messages: convertToModelMessages(messages),
     system: `You are a helpful assistant.\
-    Use the 'getInformation' tool to retrieve information from the knowledge base.`,
-    // stopWhen: stepCountIs(5),
+    Always call the 'getInformation' tool to retrieve \
+    information from the knowledge base.`,
+    // maxOutputTokens: 512,
+    stopWhen: stepCountIs(2),
+    prepareStep: ({ stepNumber, steps }) => {
+      if (stepNumber === 0) {
+        return {
+          toolChoice: { type: "tool", toolName: "getInformation" }, // MUST call tool now
+        };
+      }
+      return {
+        toolChoice: "none", // no tools, generate text
+      };
+    },
     tools: {
       getInformation: tool({
         description:
@@ -32,6 +46,10 @@ export async function POST(req: Request) {
             .describe(`A self-contained search query formulated from the user's request and conversation history.\
             The query should be concise, keyword-rich, and capture the core semantic intent for searching a vector database.`),
         }),
+        providerOptions: {
+          google: {} satisfies GoogleGenerativeAIProviderOptions,
+        },
+        type: "function",
         execute: async ({ question }, { messages, abortSignal }) => {
           console.log("Executing getInformation tool with question:", question);
           try {
@@ -48,7 +66,7 @@ export async function POST(req: Request) {
             // console.log(prompt.text);
 
             const results = await findRelevantContent(question, {
-              topK: 12,
+              topK: 5,
             });
             // Return compact context for the model
             return results.map((r) => ({ content: r.content, score: r.score }));
@@ -62,7 +80,7 @@ export async function POST(req: Request) {
         },
       }),
     },
-    toolChoice: { toolName: "getInformation", type: "tool" },
+    // toolChoice: { toolName: "getInformation", type: "tool" },
   });
 
   return result.toUIMessageStreamResponse();
