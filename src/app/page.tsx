@@ -1,21 +1,25 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, ToolUIPart } from "ai";
-import { useState } from "react";
+import { DefaultChatTransport, type ToolUIPart } from "ai";
+import { useRef, useState } from "react";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
-import {
-  Message,
-  MessageAvatar,
-  MessageContent,
-} from "@/components/ai-elements/message";
+import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Response } from "@/components/ai-elements/response";
 import {
   PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
+  PromptInputAttachment,
+  PromptInputAttachments,
+  PromptInputBody,
+  type PromptInputMessage,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
@@ -54,7 +58,23 @@ export default function Chat() {
   const { messages, sendMessage, status, error, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
-  const [input, setInput] = useState("");
+  const [text, setText] = useState<string>("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSubmit = (message: PromptInputMessage) => {
+    const hasText = Boolean(message.text);
+    const hasAttachments = Boolean(message.files?.length);
+
+    if (!(hasText || hasAttachments)) {
+      return;
+    }
+
+    sendMessage({
+      text: message.text || "Sent with attachments",
+      files: message.files,
+    });
+    setText("");
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -104,35 +124,31 @@ export default function Chat() {
       <div className="bg-background/80 backdrop-blur border-t">
         <div className="mx-auto max-w-3xl p-4">
           <PromptInput
-            onSubmit={(message, e) => {
-              const hasText = Boolean(message.text);
-              const hasAttachments = Boolean(message.files?.length);
-
-              if (!(hasText || hasAttachments)) {
-                return;
-              }
-
-              if (!input.trim()) return;
-              sendMessage({ text: message.text || input });
-              setInput("");
-            }}
+            onSubmit={handleSubmit}
+            className="mt-4"
+            globalDrop
+            multiple
           >
-            <PromptInputTextarea
-              value={input}
-              onChange={(e) => setInput(e.currentTarget.value)}
-              placeholder="Ask a medical question…"
-            />
+            <PromptInputBody>
+              <PromptInputAttachments>
+                {(attachment) => <PromptInputAttachment data={attachment} />}
+              </PromptInputAttachments>
+              <PromptInputTextarea
+                onChange={(e) => setText(e.target.value)}
+                ref={textareaRef}
+                value={text}
+              />
+            </PromptInputBody>
             <PromptInputToolbar>
               <PromptInputTools>
-                {/* extra tools can go here */}
+                <PromptInputActionMenu>
+                  <PromptInputActionMenuTrigger />
+                  <PromptInputActionMenuContent>
+                    <PromptInputActionAddAttachments />
+                  </PromptInputActionMenuContent>
+                </PromptInputActionMenu>
               </PromptInputTools>
-              <div className="flex items-center gap-2">
-                {status === "streaming" ? (
-                  <PromptInputSubmit status={status} onClick={() => stop()} />
-                ) : (
-                  <PromptInputSubmit status={status} />
-                )}
-              </div>
+              <PromptInputSubmit disabled={!text && !status} status={status} />
             </PromptInputToolbar>
           </PromptInput>
           {error ? (

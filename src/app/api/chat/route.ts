@@ -41,8 +41,7 @@ export async function POST(req: Request) {
         description:
           "get information from your Qdrant knowledge base to answer questions",
         inputSchema: z.object({
-          question: z
-            .string()
+          question: z.string()
             .describe(`A self-contained search query formulated from the user's request and conversation history.\
             The query should be concise, keyword-rich, and capture the core semantic intent for searching a vector database.`),
         }),
@@ -53,19 +52,18 @@ export async function POST(req: Request) {
         execute: async ({ question }, { messages, abortSignal }) => {
           console.log("Executing getInformation tool with question:", question);
           try {
-            // const prompt = await generateText({
-            //   model: google("gemini-2.5-pro"),
-            //   messages,
-            //   system: `You are an expert at rewriting user questions into effective search queries for a vector database.\
-            //   Based on the conversation history and the latest user question, formulate a self-contained search query.\
-            //   The query should be concise, rich in keywords, and stripped of conversational filler.\
-            //   It should capture the core semantic intent of the user's request.`,
-            //   //   prompt: question,
-            //   abortSignal,
-            // });
-            // console.log(prompt.text);
+            const prompt = await generateText({
+              model: google("gemini-2.5-pro"),
+              messages,
+              system: `You are an expert at rewriting user questions into effective search queries for a vector database.\
+              Based on the conversation history and the latest user question, formulate a self-contained search query.\
+              The query should be concise, rich in keywords, and stripped of conversational filler.\
+              It should capture the core semantic intent of the user's request.`,
+              // prompt: question,
+              abortSignal,
+            });
 
-            const results = await findRelevantContent(question, {
+            const results = await findRelevantContent(prompt.text, {
               topK: 5,
             });
             // Return compact context for the model
