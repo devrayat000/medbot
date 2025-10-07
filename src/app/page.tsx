@@ -7,23 +7,27 @@ import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
-} from "@/components/conversation";
-import { Message, MessageAvatar, MessageContent } from "@/components/message";
-import { Response } from "@/components/response";
+} from "@/components/ai-elements/conversation";
+import {
+  Message,
+  MessageAvatar,
+  MessageContent,
+} from "@/components/ai-elements/message";
+import { Response } from "@/components/ai-elements/response";
 import {
   PromptInput,
   PromptInputSubmit,
   PromptInputTextarea,
   PromptInputToolbar,
   PromptInputTools,
-} from "@/components/prompt-input";
+} from "@/components/ai-elements/prompt-input";
 import {
   Tool,
   ToolContent,
   ToolHeader,
   ToolInput,
   ToolOutput,
-} from "@/components/tool";
+} from "@/components/ai-elements/tool";
 
 type RetrievalToolInput = {
   location: string;
@@ -100,10 +104,16 @@ export default function Chat() {
       <div className="bg-background/80 backdrop-blur border-t">
         <div className="mx-auto max-w-3xl p-4">
           <PromptInput
-            onSubmit={(e) => {
-              e.preventDefault();
+            onSubmit={(message, e) => {
+              const hasText = Boolean(message.text);
+              const hasAttachments = Boolean(message.files?.length);
+
+              if (!(hasText || hasAttachments)) {
+                return;
+              }
+
               if (!input.trim()) return;
-              sendMessage({ text: input });
+              sendMessage({ text: message.text || input });
               setInput("");
             }}
           >
