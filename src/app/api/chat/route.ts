@@ -41,7 +41,8 @@ export async function POST(req: Request) {
         description:
           "get information from your Qdrant knowledge base to answer questions",
         inputSchema: z.object({
-          question: z.string()
+          question: z
+            .string()
             .describe(`A self-contained search query formulated from the user's request and conversation history.\
             The query should be concise, keyword-rich, and capture the core semantic intent for searching a vector database.`),
         }),
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
           console.log("Executing getInformation tool with question:", question);
           try {
             const prompt = await generateText({
-              model: google("gemini-2.5-pro"),
+              model: google("gemini-2.5-flash"),
               messages,
               system: `You are an expert at rewriting user questions into effective search queries for a vector database.\
               Based on the conversation history and the latest user question, formulate a self-contained search query.\
