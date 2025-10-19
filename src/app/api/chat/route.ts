@@ -23,7 +23,10 @@ export async function POST(req: Request) {
     messages: convertToModelMessages(messages),
     system: `You are a helpful assistant.\
     Always call the 'getInformation' tool to retrieve \
-    information from the knowledge base.`,
+    information from the knowledge base.
+    If the question and attachments are in English, or the user explicitly requests an answer in English, \
+    respond in English. Otherwise, respond in Bangla/Bengali.
+    If no relevant information is found, respond with "I don't know."`,
     // maxOutputTokens: 512,
     stopWhen: stepCountIs(2),
     prepareStep: ({ stepNumber, steps }) => {
