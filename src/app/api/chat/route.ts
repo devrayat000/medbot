@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const { messages }: { messages: UIMessage[] } = await req.json();
   google.tools.googleSearch;
   const result = streamText({
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-2.5-pro"),
     temperature: 0.2,
     messages: convertToModelMessages(messages),
     system: `You are a helpful assistant.\
@@ -26,7 +26,8 @@ export async function POST(req: Request) {
     information from the knowledge base.
     If the question and attachments are in English, or the user explicitly requests an answer in English, \
     respond in English. Otherwise, respond in Bangla/Bengali.
-    If no relevant information is found, respond with "I don't know."`,
+    If no relevant information is found, respond with "I don't know."
+    Format your final answer in markdown and LaTeX.`,
     // maxOutputTokens: 512,
     stopWhen: stepCountIs(2),
     prepareStep: ({ stepNumber, steps }) => {
