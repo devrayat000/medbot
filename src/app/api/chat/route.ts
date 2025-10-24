@@ -25,7 +25,7 @@ export async function POST(req: Request) {
     Always call the 'getInformation' tool to retrieve \
     information from the knowledge base.
     If the question and attachments are in English, or the user explicitly requests an answer in English, \
-    respond in English. Otherwise, respond in Bangla/Bengali.
+    respond in English. Otherwise, respond in Bangla/Bengali ALWAYS.
     If no relevant information is found, respond with "I don't know."
     Format your final answer in markdown and LaTeX.`,
     // maxOutputTokens: 512,
